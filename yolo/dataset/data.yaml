@@ -1,0 +1,7 @@
+names:
+  - chicken
+  - egg
+
+nc: 2
+train: ./autosplit_train.txt
+val: ./autosplit_val.txt

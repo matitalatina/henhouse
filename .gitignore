@@ -1,0 +1,4 @@
+.venv/
+/logs/
+/models/yolo*
+.DS_Store

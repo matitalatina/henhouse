@@ -1,0 +1,16 @@
+services:
+  henhouse:
+    build: .
+    image: ${REGISTRY_URL}/henhouse
+    container_name: henhouse
+    restart: unless-stopped
+    environment:
+      - MQTT_HOST=${MQTT_HOST:-localhost}
+      - MQTT_PORT=${MQTT_PORT:-1883}
+      - MQTT_USERNAME=${MQTT_USERNAME:-}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      - MQTT_USE_TLS=${MQTT_USE_TLS:-false}
+      - IMAGE_SOURCE=${IMAGE_SOURCE:-url}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - IMAGE_URL=${IMAGE_URL}
+      - TZ=Europe/Rome
