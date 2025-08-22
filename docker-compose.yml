@@ -1,6 +1,5 @@
 services:
   henhouse:
-    build: .
     image: ${REGISTRY_URL}/henhouse
     container_name: henhouse
     restart: unless-stopped
