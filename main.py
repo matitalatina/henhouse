@@ -4,6 +4,7 @@ import logging
 import time
 import gc
 import psutil
+import traceback
 from typing import Dict
 
 from PIL import Image
@@ -91,15 +92,9 @@ def setup_mqtt_sensors() -> Dict[str, Sensor]:
 
 
 def publish_counts_to_mqtt(sensors: Dict[str, Sensor], counts: Dict[str, int]):
-    """
-    Publish detection counts to MQTT sensors
-    """
-    try:
-        sensors["eggs"].set_state(counts["egg"])
-        sensors["chickens"].set_state(counts["chicken"])
-        logging.info(f"Published to MQTT - Eggs: {counts['egg']}, Chickens: {counts['chicken']}")
-    except Exception as e:
-        logging.error(f"Failed to publish to MQTT: {e}")
+    sensors["eggs"].set_state(counts["egg"])
+    sensors["chickens"].set_state(counts["chicken"])
+    logging.info(f"Published to MQTT - Eggs: {counts['egg']}, Chickens: {counts['chicken']}")
 
 
 def load_image() -> Image.Image:
@@ -137,39 +132,24 @@ def load_model() -> YOLO:
         raise
 
 
-def perform_detection(model: YOLO, image: Image.Image, mqtt_sensors: Dict[str, Sensor] = None) -> Dict[str, int]:
-    """
-    Perform object detection on the given image and optionally publish to MQTT
-    """
-    
+def perform_detection(model: YOLO, image: Image.Image) -> Dict[str, int]:
     try:
         logging.debug("Starting object detection...")
         result = model.predict(image, device="cpu")[0]
         counts = {name: 0 for name in result.names.values()}
-    
+
         for box in result.boxes:
             class_id = int(box.cls)
             class_name = result.names[class_id]
             counts[class_name] += 1
-        
-        publish_counts_to_mqtt(mqtt_sensors, counts)
-        
-        # Explicit cleanup of result object
+
         del result
         return counts
-                
+
     except Exception as e:
-        import traceback
         traceback.print_exc()
         logging.error(f"Detection failed: {e}")
-        # Return zero counts on error
-        zero_counts = {"egg": 0, "chicken": 0}
-        if mqtt_sensors:
-            try:
-                publish_counts_to_mqtt(mqtt_sensors, zero_counts)
-            except Exception as mqtt_error:
-                logging.error(f"Failed to publish zero counts after detection error: {mqtt_error}")
-        return zero_counts
+        return {"egg": 0, "chicken": 0}
 
 
 def get_memory_usage() -> float:
@@ -199,7 +179,7 @@ def main():
         logging.info("MQTT integration enabled")
     except Exception as e:
         logging.warning(f"Failed to initialize MQTT sensors: {e}")
-        logging.warning("Continuing without MQTT integration")
+        logging.warning("Will retry MQTT connection periodically")
     
     logging.info(f"Starting continuous monitoring (detection every {DETECTION_INTERVAL} seconds)...")
     
@@ -210,11 +190,27 @@ def main():
             current_memory = get_memory_usage()
             logging.debug(f"Starting detection cycle {cycle_count}, memory: {current_memory:.1f} MB")
             
+            # Retry MQTT connection if not connected
+            if mqtt_sensors is None:
+                try:
+                    mqtt_sensors = setup_mqtt_sensors()
+                    logging.info("MQTT integration re-established")
+                except Exception as e:
+                    logging.warning(f"MQTT still unavailable: {e}")
+            
             # Load fresh image
             image = load_image()
             
-            # Perform detection and publish to MQTT
-            perform_detection(model, image, mqtt_sensors)
+            # Perform detection
+            counts = perform_detection(model, image)
+            
+            # Publish to MQTT if connected
+            if mqtt_sensors:
+                try:
+                    publish_counts_to_mqtt(mqtt_sensors, counts)
+                except Exception as e:
+                    logging.error(f"Failed to publish to MQTT: {e}")
+                    mqtt_sensors = None
             
             # Explicit cleanup
             del image
