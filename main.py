@@ -32,7 +32,7 @@ MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "")
 MQTT_USE_TLS = os.getenv("MQTT_USE_TLS", "false").lower() == "true"
 
 # Configuration
-DETECTION_INTERVAL = 900  # seconds between detections
+DETECTION_INTERVAL = int(os.getenv("DETECTION_INTERVAL", "300"))  # seconds between detections
 IMAGE_SOURCE = os.getenv("IMAGE_SOURCE", "file")  # "file" or "url"
 IMAGE_URL = os.getenv("IMAGE_URL", "not_set")
 IMAGE_FILE = os.getenv("IMAGE_FILE", "snapshot.jpeg")

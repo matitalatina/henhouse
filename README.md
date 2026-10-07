@@ -71,7 +71,7 @@ The service will:
 - Load the pre-trained YOLO model (`models/henhouse.onnx`)
 - Connect to your MQTT broker
 - Register with Home Assistant via MQTT discovery
-- Start continuous monitoring (every 15 minutes by default)
+- Start continuous monitoring (every 5 minutes by default)
 
 ## 🏠 Home Assistant Integration
 

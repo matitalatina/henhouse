@@ -12,4 +12,5 @@ services:
       - IMAGE_SOURCE=${IMAGE_SOURCE:-url}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - IMAGE_URL=${IMAGE_URL}
+      - DETECTION_INTERVAL=${DETECTION_INTERVAL:-300}
       - TZ=Europe/Rome
